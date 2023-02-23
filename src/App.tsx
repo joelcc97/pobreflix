@@ -28,7 +28,7 @@ const App: Component = () => {
       <h3 class={styles.Title}>Continue Watching...</h3>
       <div class={styles.List}>
         <For each={content()} fallback={<div>Loading...</div>}>
-          {(item) => <div>{item}</div>}
+          {(item) => <div class={styles.Snap}>{item}</div>}
         </For>
       </div>
     </div>
