@@ -1,0 +1,18 @@
+.List {
+  display: flex;
+  flex-direction: row !important;
+  column-gap: 10px;
+  width: 100%;
+  justify-content: start;
+  margin-bottom: 30px !important;
+}
+
+.Scroll{
+  display: flex;
+  flex-direction: column !important;
+}
+
+.Title {
+  color: #fff;
+  margin-bottom: 20px;
+}
