@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.2
+// @version      0.0.1
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
-// @downloadURL  https://gist.github.com/joelcc97/0c3471962ffd7b38e66f0e8a4d3248cd/raw/82d4eb0c6d5a84f821331d24ef0e1f99434cf3c0/probreflix.user.js
-// @updateURL    https://gist.github.com/joelcc97/0c3471962ffd7b38e66f0e8a4d3248cd/raw/82d4eb0c6d5a84f821331d24ef0e1f99434cf3c0/probreflix.user.js
+// @downloadURL  https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js
+// @updateURL    https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js
 // @match        https://www3.pobre.wtf
 // @match        https://www3.pobre.wtf/animes
 // @match        https://www3.pobre.wtf/animes/*

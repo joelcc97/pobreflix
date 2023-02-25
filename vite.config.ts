@@ -27,6 +27,10 @@ export default defineConfig({
         description: "Pobretv enhanced",
         version: "0.0.1",
         name: "Pobreflix",
+        downloadURL:
+          "https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js",
+        updateURL:
+          "https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js",
       },
     }),
   ],
