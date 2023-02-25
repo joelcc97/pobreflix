@@ -1,34 +1,38 @@
 import { Component, createSignal, For } from "solid-js";
-import config from "./configs";
-import { getGlobalStore } from "./stores/global/GlobalStore";
 import styles from "./App.module.css";
+import { resolveTvShowUrl } from "./utils";
+import {
+  FollowingContentType,
+  loadFollowingContent,
+} from "./scrapers/followingContentScraper";
 
 const App: Component = () => {
-  const [content, setContent] = createSignal<Element[]>([]);
+  const [content, setContent] = createSignal<FollowingContentType[]>([]);
 
-  const loadData = async () => {
-    const data = await fetch(
-      `${config.baseUrl}/profile/${getGlobalStore().username || ""}/t-f`
-    );
+  loadFollowingContent().then((data) => setContent(data));
 
-    const html = await data.text();
+  const clickHijack = (e: MouseEvent, item: FollowingContentType): void => {
+    e.preventDefault();
 
-    const parser = new DOMParser();
-    const parsedDocument = parser.parseFromString(html, "text/html");
-
-    const following = parsedDocument.querySelectorAll("div#content-listing")[0];
-
-    setContent(Array.from(following.children));
+    window.location.href = resolveTvShowUrl({
+      showId: item.id,
+      season: "1",
+    });
   };
-
-  loadData();
 
   return (
     <div class={styles.Scroll}>
       <h3 class={styles.Title}>Continue Watching...</h3>
       <div class={styles.List}>
         <For each={content()} fallback={<div>Loading...</div>}>
-          {(item) => <div class={styles.Snap}>{item}</div>}
+          {(contentItem) => (
+            <div
+              class={styles.Snap}
+              onClick={(e) => clickHijack(e, contentItem)}
+            >
+              {contentItem.item}
+            </div>
+          )}
         </For>
       </div>
     </div>

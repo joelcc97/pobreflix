@@ -1,3 +1,5 @@
+import configs from "../configs";
+
 export enum TypeOfContentEnum {
   MOVIES = "movies",
   SHOWS = "tvshows",
@@ -40,4 +42,25 @@ export const getLoggedInUser = (): Option<string> => {
   if (!userInfo) return undefined;
 
   return userInfo.textContent || "";
+};
+
+export const resolveTvShowUrl = ({
+  showId,
+  season,
+  episode,
+}: {
+  showId: string;
+  season: string;
+  episode?: string;
+}): string => {
+  if (!episode) {
+    return configs.tvshowSeasonLinkTemplate
+      .replace("${showId}", showId)
+      .replace("${season}", season);
+  }
+
+  return configs.tvshowCompleteLinkTemplate
+    .replace("${showId}", showId)
+    .replace("${season}", season)
+    .replace("${episode}", episode);
 };
