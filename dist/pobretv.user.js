@@ -7,7 +7,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
 // @downloadURL  https://raw.githubusercontent.com/joelcc97/pobreflix/master/dist/pobretv.user.js
 // @updateURL    https://raw.githubusercontent.com/joelcc97/pobreflix/master/dist/pobretv.user.js
-// @match        https://www3.pobre.wtf
+// @match        https://www3.pobre.wtf/
 // @match        https://www3.pobre.wtf/animes
 // @match        https://www3.pobre.wtf/animes/*
 // @match        https://www3.pobre.wtf/movies
@@ -740,7 +740,7 @@
     return [node];
   }
   const configs = {
-    baseUrl: "https://www3.pobre.wtf",
+    baseUrl: "https://www3.pobre.wtf/",
     pages: ["movies", "tvshows", "animes"],
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
