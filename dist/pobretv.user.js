@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.3
+// @version      0.0.4
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -18,7 +18,7 @@
 // @exclude      https://www3.pobre.wtf/play/*
 // ==/UserScript==
 
-(e=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=e,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;flex:1;width:100%;padding:0 48px}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}._List_kkz49_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_kkz49_1{-ms-overflow-style:none;scrollbar-width:none}._List_kkz49_1::-webkit-scrollbar{display:none}}._Scroll_kkz49_45{display:flex;flex-direction:column!important;max-width:100%}._Title_kkz49_57{color:#fff;margin-bottom:20px}._Snap_kkz49_67{scroll-snap-align:start;scroll-snap-stop:always}");
+(n=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=n,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_4i9ij_1{width:100%;max-width:100%}@media screen and (min-width: 1200px){._Container_4i9ij_1{flex:0 0 auto;width:66.66666666%}}");
 
 (function() {
   var _a;
@@ -744,7 +744,8 @@
     pages: ["movies", "tvshows", "animes"],
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
-    tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}"
+    tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
+    scriptVersion: "0.0.4"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
@@ -775,16 +776,35 @@
       return void 0;
     return userInfo.textContent || "";
   };
-  const resolveTvShowUrl = ({
-    showId,
-    season,
-    episode
-  }) => {
-    if (!episode) {
-      return configs.tvshowSeasonLinkTemplate.replace("${showId}", showId).replace("${season}", season);
+  async function getParsedDocumentFromUrl(url) {
+    const data = await fetch(url);
+    const html = await data.text();
+    const parser = new DOMParser();
+    return parser.parseFromString(html, "text/html");
+  }
+  const STORE_KEY = "pobreflix";
+  function getLocalStorage() {
+    const rawData = localStorage.getItem(STORE_KEY);
+    if (!rawData)
+      return void 0;
+    try {
+      const parsedData = JSON.parse(rawData);
+      return parsedData;
+    } catch {
+      return void 0;
     }
-    return configs.tvshowCompleteLinkTemplate.replace("${showId}", showId).replace("${season}", season).replace("${episode}", episode);
-  };
+  }
+  function setLocalStorage(newData) {
+    localStorage.setItem(STORE_KEY, JSON.stringify(newData));
+  }
+  function initialStorageLoad() {
+    const localStorageData = getLocalStorage();
+    if (!localStorageData) {
+      setLocalStorage({});
+      return {};
+    }
+    return localStorageData;
+  }
   let globalStore = {};
   function setGlobalStore(data) {
     globalStore = { ...globalStore, ...data };
@@ -793,23 +813,20 @@
     return globalStore;
   }
   const index = "";
-  const List = "_List_kkz49_1";
-  const Scroll = "_Scroll_kkz49_45";
-  const Title = "_Title_kkz49_57";
-  const Snap = "_Snap_kkz49_67";
-  const styles = {
+  const List = "_List_14sjd_1";
+  const Scroll = "_Scroll_14sjd_45";
+  const Title = "_Title_14sjd_59";
+  const Snap = "_Snap_14sjd_69";
+  const styles$1 = {
     List,
     Scroll,
     Title,
     Snap
   };
   const loadFollowingContent = async () => {
-    const data = await fetch(
+    const parsedDocument = await getParsedDocumentFromUrl(
       `${configs.baseUrl}profile/${getGlobalStore().username || ""}/t-f`
     );
-    const html = await data.text();
-    const parser = new DOMParser();
-    const parsedDocument = parser.parseFromString(html, "text/html");
     const following = parsedDocument.querySelectorAll(
       "div#content-listing > a.item-poster"
     );
@@ -825,22 +842,19 @@
     });
     return continueWatchingContent;
   };
-  const _tmpl$ = /* @__PURE__ */ template(`<div><h3>Continue Watching...</h3><div></div></div>`), _tmpl$2 = /* @__PURE__ */ template(`<div>Loading...</div>`), _tmpl$3 = /* @__PURE__ */ template(`<div></div>`);
-  const App = () => {
-    const [content, setContent] = createSignal([]);
+  const _tmpl$$1 = /* @__PURE__ */ template(`<div><h3>Continue Watching...</h3><div></div></div>`), _tmpl$2 = /* @__PURE__ */ template(`<div>Loading...</div>`), _tmpl$3 = /* @__PURE__ */ template(`<div></div>`);
+  const HomePage = () => {
+    const [content2, setContent] = createSignal([]);
     loadFollowingContent().then((data) => setContent(data));
     const clickHijack = (e, item) => {
       e.preventDefault();
-      window.location.href = resolveTvShowUrl({
-        showId: item.id,
-        season: "1"
-      });
+      window.location.href = item.href;
     };
     return (() => {
-      const _el$ = _tmpl$.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling;
+      const _el$ = _tmpl$$1.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling;
       insert(_el$3, createComponent(For, {
         get each() {
-          return content();
+          return content2();
         },
         get fallback() {
           return _tmpl$2.cloneNode(true);
@@ -849,12 +863,12 @@
           const _el$5 = _tmpl$3.cloneNode(true);
           _el$5.$$click = (e) => clickHijack(e, contentItem);
           insert(_el$5, () => contentItem.item);
-          createRenderEffect(() => className(_el$5, styles.Snap));
+          createRenderEffect(() => className(_el$5, styles$1.Snap));
           return _el$5;
         })()
       }));
       createRenderEffect((_p$) => {
-        const _v$ = styles.Scroll, _v$2 = styles.Title, _v$3 = styles.List;
+        const _v$ = styles$1.Scroll, _v$2 = styles$1.Title, _v$3 = styles$1.List;
         _v$ !== _p$._v$ && className(_el$, _p$._v$ = _v$);
         _v$2 !== _p$._v$2 && className(_el$2, _p$._v$2 = _v$2);
         _v$3 !== _p$._v$3 && className(_el$3, _p$._v$3 = _v$3);
@@ -868,20 +882,64 @@
     })();
   };
   delegateEvents(["click"]);
+  const Container = "_Container_4i9ij_1";
+  const styles = {
+    Container
+  };
+  const _tmpl$ = /* @__PURE__ */ template(`<div></div>`);
+  const ShowsPage = ({
+    hasContentPlayer
+  }) => {
+    const episodesArray = Array.from(document.querySelectorAll("div.content-episodes > a"));
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "class") {
+          console.log("TODO - sync local storage with new information");
+        }
+      });
+    });
+    episodesArray.forEach((episode) => {
+      const episodeDataNode = episode.querySelector("div.episode");
+      if (episodeDataNode) {
+        observer.observe(episodeDataNode, {
+          attributes: true
+        });
+      }
+    });
+    return hasContentPlayer ? (() => {
+      const _el$ = _tmpl$.cloneNode(true);
+      createRenderEffect(() => className(_el$, styles.Container));
+      return _el$;
+    })() : null;
+  };
   localStorage.setItem("adsVideo", new Date().toString());
+  initialStorageLoad();
   (_a = document.querySelectorAll("section#banner")[0]) == null ? void 0 : _a.remove();
   document.querySelectorAll("script#recaptchaScript")[0].remove();
+  const content = extractContentInfoFromPath(window.location.pathname);
   setGlobalStore({
     username: getLoggedInUser(),
-    content: extractContentInfoFromPath(window.location.pathname)
+    content
   });
   const homeContentSection = document.querySelectorAll("section#home-content")[0];
   if (homeContentSection) {
-    render(() => createComponent(App, {}), (() => {
+    render(() => createComponent(HomePage, {}), (() => {
       const app = document.createElement("section");
       app.id = "enhanced_pobretv";
       document.body.insertBefore(app, homeContentSection);
       return app;
+    })());
+  }
+  if (content && (content.type === TypeOfContentEnum.SHOWS || content.type === TypeOfContentEnum.ANIMES)) {
+    const contentWatchSection = document.querySelectorAll("section#content-watch")[0];
+    const contentPlayer = document.querySelectorAll("div#content-player")[0];
+    render(() => createComponent(ShowsPage, {
+      hasContentPlayer: !!contentPlayer
+    }), (() => {
+      const section = document.createElement("section");
+      section.id = "enhanced_pobretv";
+      contentWatchSection.insertBefore(section, contentPlayer);
+      return section;
     })());
   }
 })();
