@@ -25,7 +25,7 @@ export default defineConfig({
           ...excludedPages.map((page) => `${baseUrl}${page}/*`),
         ],
         description: "Pobretv enhanced",
-        version: "0.0.1",
+        version: "0.0.2",
         name: "Pobreflix",
         downloadURL:
           "https://raw.githubusercontent.com/joelcc97/pobreflix/master/dist/pobretv.user.js",
