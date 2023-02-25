@@ -17,12 +17,12 @@ export default defineConfig({
         namespace: "pobretv-enhanced",
         match: [
           baseUrl,
-          ...pages.map((page) => `${baseUrl}/${page}`),
-          ...pages.map((page) => `${baseUrl}/${page}/*`),
+          ...pages.map((page) => `${baseUrl}${page}`),
+          ...pages.map((page) => `${baseUrl}${page}/*`),
         ].sort(),
         exclude: [
-          ...excludedPages.map((page) => `${baseUrl}/${page}`),
-          ...excludedPages.map((page) => `${baseUrl}/${page}/*`),
+          ...excludedPages.map((page) => `${baseUrl}${page}`),
+          ...excludedPages.map((page) => `${baseUrl}${page}/*`),
         ],
         description: "Pobretv enhanced",
         version: "0.0.1",

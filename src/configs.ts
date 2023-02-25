@@ -7,7 +7,7 @@ export type ConfigType = {
 };
 
 const configs: Readonly<ConfigType> = {
-  baseUrl: "https://www3.pobre.wtf",
+  baseUrl: "https://www3.pobre.wtf/",
   pages: ["movies", "tvshows", "animes"],
   excludedPages: ["play"],
   tvshowCompleteLinkTemplate:
