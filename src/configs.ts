@@ -4,6 +4,7 @@ export type ConfigType = {
   excludedPages: string[];
   tvshowCompleteLinkTemplate: string;
   tvshowSeasonLinkTemplate: string;
+  scriptVersion: string;
 };
 
 const configs: Readonly<ConfigType> = {
@@ -14,6 +15,7 @@ const configs: Readonly<ConfigType> = {
     "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
   tvshowSeasonLinkTemplate:
     "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
+  scriptVersion: "0.0.3",
 };
 
 export default configs;
