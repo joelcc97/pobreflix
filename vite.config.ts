@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import path from "path";
 import solidPlugin from "vite-plugin-solid";
 import monkey from "vite-plugin-monkey";
 import configs from "./src/configs";
@@ -34,4 +35,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      "~": path.resolve(__dirname, "./src"),
+    },
+  },
 });

@@ -1,0 +1,11 @@
+.Container {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media screen and (min-width: 1200px) {
+  .Container {
+    flex: 0 0 auto;
+    width: 66.66666666%;
+  }
+}

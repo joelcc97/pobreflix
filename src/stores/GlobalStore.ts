@@ -1,4 +1,4 @@
-import { ContentPlayingType } from "../../utils";
+import { ContentPlayingType } from "~/utils";
 
 type GlobalStoreType = {
   username?: string;

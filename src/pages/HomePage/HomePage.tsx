@@ -1,12 +1,12 @@
 import { Component, createSignal, For } from "solid-js";
-import styles from "./App.module.css";
-import { resolveTvShowUrl } from "./utils";
+import styles from "./HomePage.module.css";
+// import { resolveTvShowUrl } from "~/utils";
 import {
   FollowingContentType,
   loadFollowingContent,
-} from "./scrapers/followingContentScraper";
+} from "~/scrapers/followingContentScraper";
 
-const App: Component = () => {
+const HomePage: Component = () => {
   const [content, setContent] = createSignal<FollowingContentType[]>([]);
 
   loadFollowingContent().then((data) => setContent(data));
@@ -14,10 +14,11 @@ const App: Component = () => {
   const clickHijack = (e: MouseEvent, item: FollowingContentType): void => {
     e.preventDefault();
 
-    window.location.href = resolveTvShowUrl({
-      showId: item.id,
-      season: "1",
-    });
+    // window.location.href = resolveTvShowUrl({
+    //   showId: item.id,
+    //   season: "1",
+    // });
+    window.location.href = item.href;
   };
 
   return (
@@ -39,4 +40,4 @@ const App: Component = () => {
   );
 };
 
-export default App;
+export default HomePage;

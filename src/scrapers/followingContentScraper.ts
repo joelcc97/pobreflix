@@ -1,5 +1,6 @@
-import config from "../configs";
-import { getGlobalStore } from "../stores/global/GlobalStore";
+import config from "~/configs";
+import { getGlobalStore } from "~/stores";
+import { getParsedDocumentFromUrl } from "~/utils";
 
 export type FollowingContentType = {
   id: string;
@@ -10,14 +11,9 @@ export type FollowingContentType = {
 export const loadFollowingContent = async (): Promise<
   FollowingContentType[]
 > => {
-  const data = await fetch(
+  const parsedDocument = await getParsedDocumentFromUrl(
     `${config.baseUrl}profile/${getGlobalStore().username || ""}/t-f`
   );
-
-  const html = await data.text();
-
-  const parser = new DOMParser();
-  const parsedDocument = parser.parseFromString(html, "text/html");
 
   const following = parsedDocument.querySelectorAll(
     "div#content-listing > a.item-poster"
