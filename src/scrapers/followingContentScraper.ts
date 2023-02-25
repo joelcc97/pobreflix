@@ -11,7 +11,7 @@ export const loadFollowingContent = async (): Promise<
   FollowingContentType[]
 > => {
   const data = await fetch(
-    `${config.baseUrl}/profile/${getGlobalStore().username || ""}/t-f`
+    `${config.baseUrl}profile/${getGlobalStore().username || ""}/t-f`
   );
 
   const html = await data.text();

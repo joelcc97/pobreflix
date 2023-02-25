@@ -805,7 +805,7 @@
   };
   const loadFollowingContent = async () => {
     const data = await fetch(
-      `${configs.baseUrl}/profile/${getGlobalStore().username || ""}/t-f`
+      `${configs.baseUrl}profile/${getGlobalStore().username || ""}/t-f`
     );
     const html = await data.text();
     const parser = new DOMParser();
