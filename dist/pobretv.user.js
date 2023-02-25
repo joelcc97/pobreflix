@@ -5,8 +5,8 @@
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
-// @downloadURL  https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js
-// @updateURL    https://github.com/joelcc97/pobreflix/raw/master/dist/pobretv.user.js
+// @downloadURL  https://raw.githubusercontent.com/joelcc97/pobreflix/c017af5e7176f4460521430b295452f0866ee2db/dist/pobretv.user.js
+// @updateURL    https://raw.githubusercontent.com/joelcc97/pobreflix/c017af5e7176f4460521430b295452f0866ee2db/dist/pobretv.user.js
 // @match        https://www3.pobre.wtf
 // @match        https://www3.pobre.wtf/animes
 // @match        https://www3.pobre.wtf/animes/*
