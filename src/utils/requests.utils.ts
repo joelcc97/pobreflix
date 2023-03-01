@@ -1,18 +1,15 @@
 import configs from "~/configs";
 
-export type EpisodeData = {
-  id: string;
-  dataId: string;
-  number: string;
-  season: string;
-  seasonDataId: string;
-  node: Element;
-};
+export type ContentType = "ep" | "s";
 
-export async function markEpisodeRead(data: EpisodeData): Promise<void> {
+export async function markEpisodeRead(
+  dataId: string,
+  nodeToUpdate: Element,
+  contentType: ContentType = "ep"
+): Promise<boolean> {
   try {
     const result = await fetch(
-      `${configs.baseUrl}interaction?content_id=${data.dataId}&content_type=ep&interaction_type=w`,
+      `${configs.baseUrl}interaction?content_id=${dataId}&content_type=${contentType}&interaction_type=w`,
       {
         method: "POST",
         headers: {
@@ -26,11 +23,13 @@ export async function markEpisodeRead(data: EpisodeData): Promise<void> {
     const responseJson = await result.json();
 
     if (responseJson.success) {
-      data.node.classList.toggle("seen");
+      nodeToUpdate.classList.toggle("seen");
+      return true;
     } else {
       throw new Error();
     }
   } catch {
     console.error("Episode read status operation failed");
+    return false;
   }
 }

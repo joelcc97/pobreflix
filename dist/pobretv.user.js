@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.5
+// @version      0.0.6
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -745,7 +745,7 @@
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
     tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-    scriptVersion: "0.0.5"
+    scriptVersion: "0.0.6"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
@@ -815,10 +815,10 @@
     }
     return localStorageData;
   }
-  async function markEpisodeRead(data) {
+  async function markEpisodeRead(dataId, nodeToUpdate, contentType = "ep") {
     try {
       const result = await fetch(
-        `${configs.baseUrl}interaction?content_id=${data.dataId}&content_type=ep&interaction_type=w`,
+        `${configs.baseUrl}interaction?content_id=${dataId}&content_type=${contentType}&interaction_type=w`,
         {
           method: "POST",
           headers: {
@@ -830,12 +830,14 @@
       );
       const responseJson = await result.json();
       if (responseJson.success) {
-        data.node.classList.toggle("seen");
+        nodeToUpdate.classList.toggle("seen");
+        return true;
       } else {
         throw new Error();
       }
     } catch {
       console.error("Episode read status operation failed");
+      return false;
     }
   }
   let globalStore = {};
@@ -921,23 +923,46 @@
     Container,
     Button
   };
-  const _tmpl$ = /* @__PURE__ */ template(`<div><button>Mark watched</button><button>Next Episode</button></div>`);
+  const _tmpl$ = /* @__PURE__ */ template(`<div><button></button><button>Next Episode</button></div>`);
+  const isActive = (node) => {
+    return node.className.includes("active");
+  };
+  const getTvShowData = () => {
+    const buttonElements = Array.from(document.querySelectorAll("div.content-actions > a"));
+    const followNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "f");
+    const favoriteNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "l");
+    const watchLaterNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "wl");
+    if (!followNode || !favoriteNode || !watchLaterNode) {
+      return void 0;
+    }
+    return {
+      isFollowing: isActive(followNode),
+      followNode,
+      isFavorite: isActive(favoriteNode),
+      favoriteNode,
+      isWatchLater: isActive(watchLaterNode),
+      watchLaterNode
+    };
+  };
   const ShowsPage = ({
     hasContentPlayer
   }) => {
+    const [currentContentData, setCurrentContentData] = createSignal();
     const tvShowInfo = getGlobalStore().content;
     const episodesArray = Array.from(document.querySelectorAll("div.content-episodes > a"));
     const currentSeasonNode = document.querySelector("div#seasons div.list div.open-season");
-    let currentEpisodeData;
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "attributes" && mutation.attributeName === "class") {
-          console.log("TODO - sync local storage with new information");
+          const currentShowStatus = getTvShowData();
+          if (currentShowStatus && !currentShowStatus.isFollowing) {
+            (currentShowStatus == null ? void 0 : currentShowStatus.followNode).click();
+          }
         }
       });
     });
-    const currentSeasonDataId = currentSeasonNode == null ? void 0 : currentSeasonNode.getAttribute("data-tvshow-id");
-    episodesArray.forEach((episode) => {
+    const currentSeasonDataId = (currentSeasonNode == null ? void 0 : currentSeasonNode.getAttribute("data-tvshow-id")) || "";
+    episodesArray.forEach((episode, index2) => {
       const episodeDataNode = episode.querySelector("div.episode");
       if (episodeDataNode) {
         observer.observe(episodeDataNode, {
@@ -946,36 +971,60 @@
         const id = episodeDataNode.getAttribute("data-episode-number") || "";
         const dataId = episodeDataNode.getAttribute("data-episode-id") || "";
         const season = episodeDataNode.getAttribute("data-season-id") || "";
+        const isWatched = episodeDataNode.className.includes("seen");
         const data = {
           id,
           dataId,
           number: id,
           season,
           node: episodeDataNode,
-          seasonDataId: currentSeasonDataId || ""
+          seasonDataId: currentSeasonDataId,
+          isSeasonLastEpisode: index2 === episodesArray.length - 1,
+          isWatched
         };
         if (data.id && (tvShowInfo == null ? void 0 : tvShowInfo.episode) && data.id === tvShowInfo.episode) {
-          currentEpisodeData = data;
+          setCurrentContentData(data);
         }
       }
     });
     const handleNextEpisodeClick = () => {
+      var _a2;
       if (!tvShowInfo || !tvShowInfo.season || !tvShowInfo.episode) {
         return;
       }
-      window.location.href = resolveTvShowUrl({
-        showId: tvShowInfo.id,
-        season: tvShowInfo.season,
-        episode: `${parseInt(tvShowInfo.episode) + 1}`
-      });
+      if (!((_a2 = currentContentData()) == null ? void 0 : _a2.isSeasonLastEpisode)) {
+        window.location.href = resolveTvShowUrl({
+          showId: tvShowInfo.id,
+          season: tvShowInfo.season,
+          episode: `${parseInt(tvShowInfo.episode) + 1}`
+        });
+      }
+    };
+    const handleToggleWatched = async (data) => {
+      const success = await markEpisodeRead(data.dataId, data.node);
+      if (success) {
+        setCurrentContentData((prevState) => {
+          if (!prevState)
+            return prevState;
+          return {
+            ...prevState,
+            isWatched: !prevState.isWatched
+          };
+        });
+      }
     };
     return hasContentPlayer ? (() => {
       const _el$ = _tmpl$.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling;
       _el$2.$$click = () => {
-        if (currentEpisodeData) {
-          markEpisodeRead(currentEpisodeData);
+        const contentData = currentContentData();
+        if (contentData) {
+          handleToggleWatched(contentData);
         }
       };
+      insert(_el$2, () => {
+        var _a2;
+        return `${((_a2 = currentContentData()) == null ? void 0 : _a2.isWatched) ? "Unwatch" : "Mark watched"}`;
+      });
       _el$3.$$click = handleNextEpisodeClick;
       createRenderEffect((_p$) => {
         const _v$ = styles.Container, _v$2 = styles.Button, _v$3 = styles.Button;
