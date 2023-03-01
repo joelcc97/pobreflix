@@ -13,8 +13,8 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
   );
 
   const currentSeasonNode = document.querySelector(
-    "div#seasons div.list div.open-season")
-
+    "div#seasons div.list div.open-season"
+  );
 
   const mappedEpisodeData: EpisodeData[] = [];
 
@@ -43,7 +43,14 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
       const dataId = episodeDataNode.getAttribute("data-episode-id") || "";
       const season = episodeDataNode.getAttribute("data-season-id") || "";
 
-      const data = { id, dataId, number: id, season, node: episodeDataNode, seasonDataId: currentSeasonDataId || '' };
+      const data = {
+        id,
+        dataId,
+        number: id,
+        season,
+        node: episodeDataNode,
+        seasonDataId: currentSeasonDataId || "",
+      };
 
       if (data.id && tvShowInfo?.episode && data.id === tvShowInfo.episode) {
         currentEpisodeData = data;
@@ -52,7 +59,6 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
       mappedEpisodeData.push(data);
     }
   });
-
 
   const handleNextEpisodeClick = (): void => {
     if (!tvShowInfo || !tvShowInfo.season || !tvShowInfo.episode) {
