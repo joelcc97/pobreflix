@@ -1,11 +1,32 @@
 .Container {
   width: 100%;
   max-width: 100%;
+  margin-top: 40px;
+  margin-bottom: -20px;
+  padding: 0px 12px;
+  display: flex;
+  justify-content: space-around;
+  column-gap: 30px;
 }
 
 @media screen and (min-width: 1200px) {
   .Container {
     flex: 0 0 auto;
     width: 66.66666666%;
+    justify-content: flex-end;
   }
+}
+
+.Button {
+  padding: 10px 15px;
+  outline: 0;
+  border-radius: 12px;
+  background: rgba(92, 139, 147, 0.2);
+  color: white;
+  border: 0;
+  font-weight: 600;
+}
+
+.Button:hover {
+  background: rgba(92, 139, 147, 0.4);
 }

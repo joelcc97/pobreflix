@@ -1,6 +1,5 @@
 import { Component, createSignal, For } from "solid-js";
 import styles from "./HomePage.module.css";
-// import { resolveTvShowUrl } from "~/utils";
 import {
   FollowingContentType,
   loadFollowingContent,
@@ -14,10 +13,6 @@ const HomePage: Component = () => {
   const clickHijack = (e: MouseEvent, item: FollowingContentType): void => {
     e.preventDefault();
 
-    // window.location.href = resolveTvShowUrl({
-    //   showId: item.id,
-    //   season: "1",
-    // });
     window.location.href = item.href;
   };
 

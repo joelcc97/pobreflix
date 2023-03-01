@@ -6,6 +6,7 @@ export type FollowingContentType = {
   id: string;
   item: Element;
   href: string;
+  lastWatchedHref?: string;
 };
 
 export const loadFollowingContent = async (): Promise<

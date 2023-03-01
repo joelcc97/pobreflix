@@ -18,7 +18,7 @@
 // @exclude      https://www3.pobre.wtf/play/*
 // ==/UserScript==
 
-(n=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=n,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_4i9ij_1{width:100%;max-width:100%}@media screen and (min-width: 1200px){._Container_4i9ij_1{flex:0 0 auto;width:66.66666666%}}");
+(t=>{const n=document.createElement("style");n.dataset.source="vite-plugin-monkey",n.innerText=t,document.head.appendChild(n)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_grqdj_1{width:100%;max-width:100%;margin-top:40px;margin-bottom:-20px;padding:0 12px;display:flex;justify-content:space-around;column-gap:30px}@media screen and (min-width: 1200px){._Container_grqdj_1{flex:0 0 auto;width:66.66666666%;justify-content:flex-end}}._Button_grqdj_39{padding:10px 15px;outline:0;border-radius:12px;background:rgba(92,139,147,.2);color:#fff;border:0;font-weight:600}._Button_grqdj_39:hover{background:rgba(92,139,147,.4)}");
 
 (function() {
   var _a;
@@ -776,6 +776,16 @@
       return void 0;
     return userInfo.textContent || "";
   };
+  const resolveTvShowUrl = ({
+    showId,
+    season,
+    episode
+  }) => {
+    if (!episode) {
+      return configs.tvshowSeasonLinkTemplate.replace("${showId}", showId).replace("${season}", season);
+    }
+    return configs.tvshowCompleteLinkTemplate.replace("${showId}", showId).replace("${season}", season).replace("${episode}", episode);
+  };
   async function getParsedDocumentFromUrl(url) {
     const data = await fetch(url);
     const html = await data.text();
@@ -804,6 +814,29 @@
       return {};
     }
     return localStorageData;
+  }
+  async function markEpisodeRead(data) {
+    try {
+      const result = await fetch(
+        `${configs.baseUrl}interaction?content_id=${data.dataId}&content_type=ep&interaction_type=w`,
+        {
+          method: "POST",
+          headers: {
+            "x-requested-with": "XMLHttpRequest",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            accept: "application/json, text/javascript, */*; q=0.01"
+          }
+        }
+      );
+      const responseJson = await result.json();
+      if (responseJson.success) {
+        data.node.classList.toggle("seen");
+      } else {
+        throw new Error();
+      }
+    } catch {
+      console.error("Episode read status operation failed");
+    }
   }
   let globalStore = {};
   function setGlobalStore(data) {
@@ -882,15 +915,20 @@
     })();
   };
   delegateEvents(["click"]);
-  const Container = "_Container_4i9ij_1";
+  const Container = "_Container_grqdj_1";
+  const Button = "_Button_grqdj_39";
   const styles = {
-    Container
+    Container,
+    Button
   };
-  const _tmpl$ = /* @__PURE__ */ template(`<div></div>`);
+  const _tmpl$ = /* @__PURE__ */ template(`<div><button>Mark watched</button><button>Next Episode</button></div>`);
   const ShowsPage = ({
     hasContentPlayer
   }) => {
+    const tvShowInfo = getGlobalStore().content;
     const episodesArray = Array.from(document.querySelectorAll("div.content-episodes > a"));
+    const currentSeasonNode = document.querySelector("div#seasons div.list div.open-season");
+    let currentEpisodeData;
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "attributes" && mutation.attributeName === "class") {
@@ -898,20 +936,62 @@
         }
       });
     });
+    const currentSeasonDataId = currentSeasonNode == null ? void 0 : currentSeasonNode.getAttribute("data-tvshow-id");
     episodesArray.forEach((episode) => {
       const episodeDataNode = episode.querySelector("div.episode");
       if (episodeDataNode) {
         observer.observe(episodeDataNode, {
           attributes: true
         });
+        const id = episodeDataNode.getAttribute("data-episode-number") || "";
+        const dataId = episodeDataNode.getAttribute("data-episode-id") || "";
+        const season = episodeDataNode.getAttribute("data-season-id") || "";
+        const data = {
+          id,
+          dataId,
+          number: id,
+          season,
+          node: episodeDataNode,
+          seasonDataId: currentSeasonDataId || ""
+        };
+        if (data.id && (tvShowInfo == null ? void 0 : tvShowInfo.episode) && data.id === tvShowInfo.episode) {
+          currentEpisodeData = data;
+        }
       }
     });
+    const handleNextEpisodeClick = () => {
+      if (!tvShowInfo || !tvShowInfo.season || !tvShowInfo.episode) {
+        return;
+      }
+      window.location.href = resolveTvShowUrl({
+        showId: tvShowInfo.id,
+        season: tvShowInfo.season,
+        episode: `${parseInt(tvShowInfo.episode) + 1}`
+      });
+    };
     return hasContentPlayer ? (() => {
-      const _el$ = _tmpl$.cloneNode(true);
-      createRenderEffect(() => className(_el$, styles.Container));
+      const _el$ = _tmpl$.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling;
+      _el$2.$$click = () => {
+        if (currentEpisodeData) {
+          markEpisodeRead(currentEpisodeData);
+        }
+      };
+      _el$3.$$click = handleNextEpisodeClick;
+      createRenderEffect((_p$) => {
+        const _v$ = styles.Container, _v$2 = styles.Button, _v$3 = styles.Button;
+        _v$ !== _p$._v$ && className(_el$, _p$._v$ = _v$);
+        _v$2 !== _p$._v$2 && className(_el$2, _p$._v$2 = _v$2);
+        _v$3 !== _p$._v$3 && className(_el$3, _p$._v$3 = _v$3);
+        return _p$;
+      }, {
+        _v$: void 0,
+        _v$2: void 0,
+        _v$3: void 0
+      });
       return _el$;
     })() : null;
   };
+  delegateEvents(["click"]);
   localStorage.setItem("adsVideo", new Date().toString());
   initialStorageLoad();
   (_a = document.querySelectorAll("section#banner")[0]) == null ? void 0 : _a.remove();
