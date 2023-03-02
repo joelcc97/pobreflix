@@ -1,10 +1,10 @@
 import configs from "~/configs";
+import { PageData } from "~/utils/pageMappers";
 
-export type ContentType = "ep" | "s";
+export type ContentType = "ep" | "s-s";
 
 export async function markEpisodeRead(
   dataId: string,
-  nodeToUpdate: Element,
   contentType: ContentType = "ep"
 ): Promise<boolean> {
   try {
@@ -23,13 +23,43 @@ export async function markEpisodeRead(
     const responseJson = await result.json();
 
     if (responseJson.success) {
-      nodeToUpdate.classList.toggle("seen");
       return true;
     } else {
       throw new Error();
     }
   } catch {
     console.error("Episode read status operation failed");
+    return false;
+  }
+}
+
+export async function updateSeasonStatus(
+  currentEpisode: PageData,
+  episodesList: PageData[]
+): Promise<boolean> {
+  try {
+    const unwatchedEpisodes = episodesList.filter(
+      (episode) => !episode.isWatched
+    );
+
+    if (
+      (unwatchedEpisodes.length === 0 && !currentEpisode.isSeasonWatched) ||
+      (unwatchedEpisodes.length === 1 && currentEpisode.isSeasonWatched)
+    ) {
+      const seasonUpdateSuccess = await markEpisodeRead(
+        `${currentEpisode.seasonDataId}-${currentEpisode.season}`,
+        "s-s"
+      );
+
+      if (seasonUpdateSuccess) {
+        return true;
+      } else {
+        throw new Error();
+      }
+    } else {
+      return false;
+    }
+  } catch {
     return false;
   }
 }

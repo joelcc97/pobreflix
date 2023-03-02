@@ -1,25 +1,31 @@
 export const STORE_KEY = "pobreflix";
 
-type ShowCommonType = {
-  number: number;
-  href?: string;
+export type ShowWatchConfigType = {
+  introDuration: number;
+  outroDuration: number;
+  autoSkipIntro: boolean;
+  autoPlay: boolean;
+  autoMarkWatched: boolean;
+};
+
+export type ShowEpisodeType = {
+  episodeNumber: number;
+  seasonNumber: number;
+  episodeDataId: string;
   watched: boolean;
 };
 
-export type ShowEpisodeType = ShowCommonType & {
+export type ShowSeasonType = {
   seasonNumber: number;
-  episodeDataId: string;
-};
-
-export type ShowSeasonType = ShowCommonType & {
   episodes: ShowEpisodeType[];
-  dataTvShowId?: string;
+  seasonDataId?: string;
+  watched: boolean;
 };
 
 export type ShowStorageType = {
   id: string;
-  href?: string;
   seasons: ShowSeasonType[];
+  watchConfig?: ShowWatchConfigType;
 };
 
 export type LocalStorageType = {
@@ -28,7 +34,7 @@ export type LocalStorageType = {
 
 export function getLocalStorage(): Option<LocalStorageType> {
   const rawData = localStorage.getItem(STORE_KEY);
-  if (!rawData) return undefined;
+  if (!rawData || rawData === "{}") return undefined;
   try {
     const parsedData = JSON.parse(rawData) as LocalStorageType;
     return parsedData;
@@ -45,8 +51,9 @@ export function initialStorageLoad(): LocalStorageType {
   const localStorageData = getLocalStorage();
 
   if (!localStorageData) {
-    setLocalStorage({});
-    return {};
+    const initialStorage = { shows: new Map<string, ShowStorageType>() };
+    setLocalStorage(initialStorage);
+    return initialStorage;
   }
 
   return localStorageData;

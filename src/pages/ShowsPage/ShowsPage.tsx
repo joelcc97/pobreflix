@@ -1,83 +1,30 @@
 import { Component, createSignal } from "solid-js";
 import styles from "./ShowsPage.module.css";
-import { getGlobalStore } from "../../stores";
-import { resolveTvShowUrl, markEpisodeRead } from "~/utils";
-
-type EpisodeData = {
-  id: string;
-  dataId: string;
-  number: string;
-  node: Element;
-  isSeasonLastEpisode?: boolean;
-  isWatched?: boolean;
-};
-
-type SeasonData = {
-  season: string;
-  seasonDataId: string;
-  isTvShowLastSeason?: boolean;
-  isWatched?: boolean;
-};
-
-type TvShowData = {
-  isFollowing?: boolean;
-  followNode: Element;
-  isFavorite?: boolean;
-  favoriteNode: Element;
-  isWatchLater?: boolean;
-  watchLaterNode: Element;
-};
-
-export type PageData = EpisodeData & SeasonData;
-
-const isActive = (node: Element): boolean => {
-  return node.className.includes("active");
-};
-
-const getTvShowData = (): Option<TvShowData> => {
-  const buttonElements = Array.from(
-    document.querySelectorAll("div.content-actions > a")
-  );
-
-  const followNode = buttonElements.find(
-    (element) => element.getAttribute("data-interaction-type") === "f"
-  );
-  const favoriteNode = buttonElements.find(
-    (element) => element.getAttribute("data-interaction-type") === "l"
-  );
-  const watchLaterNode = buttonElements.find(
-    (element) => element.getAttribute("data-interaction-type") === "wl"
-  );
-
-  if (!followNode || !favoriteNode || !watchLaterNode) {
-    return undefined;
-  }
-
-  return {
-    isFollowing: isActive(followNode),
-    followNode,
-    isFavorite: isActive(favoriteNode),
-    favoriteNode,
-    isWatchLater: isActive(watchLaterNode),
-    watchLaterNode,
-  };
-};
+import { getGlobalStore } from "~/stores";
+import {
+  resolveTvShowUrl,
+  markEpisodeRead,
+  updateSeasonStatus,
+  extractContentInfoFromHref,
+} from "~/utils";
+import {
+  getTvShowStatus,
+  mapEpisodesData,
+  PageData,
+} from "~/utils/pageMappers";
 
 const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
   hasContentPlayer,
 }) => {
-  const [currentContentData, setCurrentContentData] = createSignal<PageData>();
+  const [pageDataState, setPageDataState] = createSignal<{
+    currentEpisode?: PageData;
+    episodesList: PageData[];
+  }>();
   const tvShowInfo = getGlobalStore().content;
+  // const currentShowStatus = getTvShowStatus();
 
-  const episodesArray = Array.from(
-    document.querySelectorAll("div.content-episodes > a")
-  );
-
-  const currentSeasonNode = document.querySelector(
-    "div#seasons div.list div.open-season"
-  );
-
-  const mappedPageData: PageData[] = [];
+  const pageData = mapEpisodesData();
+  setPageDataState(pageData);
 
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -85,49 +32,22 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
         mutation.type === "attributes" &&
         mutation.attributeName === "class"
       ) {
-        const currentShowStatus = getTvShowData();
+        const currentShowStatus = getTvShowStatus();
 
         if (currentShowStatus && !currentShowStatus.isFollowing) {
           (
-            currentShowStatus?.followNode as unknown as { click: () => void }
+            currentShowStatus.followNode as unknown as { click: () => void }
           ).click();
         }
+
+        const newEpisodesData = mapEpisodesData();
+        setPageDataState(newEpisodesData);
       }
     });
   });
 
-  const currentSeasonDataId =
-    currentSeasonNode?.getAttribute("data-tvshow-id") || "";
-
-  episodesArray.forEach((episode, index) => {
-    const episodeDataNode = episode.querySelector("div.episode");
-
-    if (episodeDataNode) {
-      observer.observe(episodeDataNode, { attributes: true });
-
-      const id = episodeDataNode.getAttribute("data-episode-number") || "";
-      const dataId = episodeDataNode.getAttribute("data-episode-id") || "";
-      const season = episodeDataNode.getAttribute("data-season-id") || "";
-
-      const isWatched = episodeDataNode.className.includes("seen");
-
-      const data = {
-        id,
-        dataId,
-        number: id,
-        season,
-        node: episodeDataNode,
-        seasonDataId: currentSeasonDataId,
-        isSeasonLastEpisode: index === episodesArray.length - 1,
-        isWatched,
-      };
-
-      if (data.id && tvShowInfo?.episode && data.id === tvShowInfo.episode) {
-        setCurrentContentData(data);
-      }
-
-      mappedPageData.push(data);
-    }
+  pageData.episodesList.forEach((episode) => {
+    observer.observe(episode.node, { attributes: true });
   });
 
   const handleNextEpisodeClick = (): void => {
@@ -136,28 +56,51 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
     }
 
     //TODO: handle not having next episode
-    if (!currentContentData()?.isSeasonLastEpisode) {
+    const currentPageDataState = pageDataState();
+    if (
+      !!currentPageDataState?.currentEpisode &&
+      !currentPageDataState.currentEpisode.isSeasonLastEpisode
+    ) {
       window.location.href = resolveTvShowUrl({
         showId: tvShowInfo.id,
         season: tvShowInfo.season,
         episode: `${parseInt(tvShowInfo.episode) + 1}`,
       });
+    } else if (
+      !!currentPageDataState?.currentEpisode &&
+      currentPageDataState.currentEpisode.isSeasonLastEpisode &&
+      currentPageDataState.currentEpisode.nextSeasonHref
+    ) {
+      const contentInfo = extractContentInfoFromHref(
+        currentPageDataState.currentEpisode.nextSeasonHref
+      );
+      if (contentInfo) {
+        window.location.href = resolveTvShowUrl({
+          showId: tvShowInfo.id,
+          season: contentInfo.season || "",
+          episode: "1",
+        });
+      }
     }
   };
 
   const handleToggleWatched = async (data: PageData): Promise<void> => {
-    const success = await markEpisodeRead(data.dataId, data.node);
+    const episodeUpdateSuccess = await markEpisodeRead(data.dataId);
+    if (!episodeUpdateSuccess) return;
 
-    if (success) {
-      setCurrentContentData((prevState) => {
-        if (!prevState) return prevState;
+    data.node.classList.toggle("seen");
 
-        return {
-          ...prevState,
-          isWatched: !prevState.isWatched,
-        };
-      });
-    }
+    const { currentEpisode, episodesList } = mapEpisodesData();
+    if (!currentEpisode) return;
+
+    const seasonUpdateSuccess = await updateSeasonStatus(
+      currentEpisode,
+      episodesList
+    );
+
+    if (!seasonUpdateSuccess || !currentEpisode.seasonNode) return;
+
+    currentEpisode.seasonNode.classList.toggle("seen");
   };
 
   return hasContentPlayer ? (
@@ -165,13 +108,16 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
       <button
         class={styles.Button}
         onClick={(): void => {
-          const contentData = currentContentData();
+          const contentData = pageDataState()?.currentEpisode;
           if (contentData) {
             handleToggleWatched(contentData);
           }
         }}
       >
-        {`${currentContentData()?.isWatched ? "Unwatch" : "Mark watched"}`}
+        {`${pageDataState()?.currentEpisode?.isWatched
+            ? "Unwatch"
+            : "Mark watched"
+          }`}
       </button>
       <button class={styles.Button} onClick={handleNextEpisodeClick}>
         Next Episode

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.6
+// @version      0.0.7
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -745,7 +745,7 @@
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
     tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-    scriptVersion: "0.0.6"
+    scriptVersion: "0.0.7"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
@@ -767,6 +767,10 @@
       season: info[3],
       episode: info[5]
     };
+  };
+  const extractContentInfoFromHref = (href) => {
+    const path = href.replace(configs.baseUrl, "");
+    return extractContentInfoFromPath("/" + path);
   };
   const getLoggedInUser = () => {
     const userInfo = document.querySelectorAll(
@@ -795,7 +799,7 @@
   const STORE_KEY = "pobreflix";
   function getLocalStorage() {
     const rawData = localStorage.getItem(STORE_KEY);
-    if (!rawData)
+    if (!rawData || rawData === "{}")
       return void 0;
     try {
       const parsedData = JSON.parse(rawData);
@@ -810,12 +814,13 @@
   function initialStorageLoad() {
     const localStorageData = getLocalStorage();
     if (!localStorageData) {
-      setLocalStorage({});
-      return {};
+      const initialStorage = { shows: /* @__PURE__ */ new Map() };
+      setLocalStorage(initialStorage);
+      return initialStorage;
     }
     return localStorageData;
   }
-  async function markEpisodeRead(dataId, nodeToUpdate, contentType = "ep") {
+  async function markEpisodeRead(dataId, contentType = "ep") {
     try {
       const result = await fetch(
         `${configs.baseUrl}interaction?content_id=${dataId}&content_type=${contentType}&interaction_type=w`,
@@ -830,13 +835,34 @@
       );
       const responseJson = await result.json();
       if (responseJson.success) {
-        nodeToUpdate.classList.toggle("seen");
         return true;
       } else {
         throw new Error();
       }
     } catch {
       console.error("Episode read status operation failed");
+      return false;
+    }
+  }
+  async function updateSeasonStatus(currentEpisode, episodesList) {
+    try {
+      const unwatchedEpisodes = episodesList.filter(
+        (episode) => !episode.isWatched
+      );
+      if (unwatchedEpisodes.length === 0 && !currentEpisode.isSeasonWatched || unwatchedEpisodes.length === 1 && currentEpisode.isSeasonWatched) {
+        const seasonUpdateSuccess = await markEpisodeRead(
+          `${currentEpisode.seasonDataId}-${currentEpisode.season}`,
+          "s-s"
+        );
+        if (seasonUpdateSuccess) {
+          return true;
+        } else {
+          throw new Error();
+        }
+      } else {
+        return false;
+      }
+    } catch {
       return false;
     }
   }
@@ -923,15 +949,22 @@
     Container,
     Button
   };
-  const _tmpl$ = /* @__PURE__ */ template(`<div><button></button><button>Next Episode</button></div>`);
   const isActive = (node) => {
     return node.className.includes("active");
   };
-  const getTvShowData = () => {
-    const buttonElements = Array.from(document.querySelectorAll("div.content-actions > a"));
-    const followNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "f");
-    const favoriteNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "l");
-    const watchLaterNode = buttonElements.find((element) => element.getAttribute("data-interaction-type") === "wl");
+  const getTvShowStatus = () => {
+    const buttonElements = Array.from(
+      document.querySelectorAll("div.content-actions > a")
+    );
+    const followNode = buttonElements.find(
+      (element) => element.getAttribute("data-interaction-type") === "f"
+    );
+    const favoriteNode = buttonElements.find(
+      (element) => element.getAttribute("data-interaction-type") === "l"
+    );
+    const watchLaterNode = buttonElements.find(
+      (element) => element.getAttribute("data-interaction-type") === "wl"
+    );
     if (!followNode || !favoriteNode || !watchLaterNode) {
       return void 0;
     }
@@ -944,30 +977,29 @@
       watchLaterNode
     };
   };
-  const ShowsPage = ({
-    hasContentPlayer
-  }) => {
-    const [currentContentData, setCurrentContentData] = createSignal();
+  const mapEpisodesData = () => {
+    var _a2, _b;
+    let currentEpisode = void 0;
+    const episodesList = [];
     const tvShowInfo = getGlobalStore().content;
-    const episodesArray = Array.from(document.querySelectorAll("div.content-episodes > a"));
-    const currentSeasonNode = document.querySelector("div#seasons div.list div.open-season");
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === "attributes" && mutation.attributeName === "class") {
-          const currentShowStatus = getTvShowData();
-          if (currentShowStatus && !currentShowStatus.isFollowing) {
-            (currentShowStatus == null ? void 0 : currentShowStatus.followNode).click();
-          }
-        }
-      });
-    });
-    const currentSeasonDataId = (currentSeasonNode == null ? void 0 : currentSeasonNode.getAttribute("data-tvshow-id")) || "";
+    const episodesArray = Array.from(
+      document.querySelectorAll("div.content-episodes > a")
+    );
+    const seasonList = Array.from(
+      ((_a2 = document.querySelector("div#seasons div.list")) == null ? void 0 : _a2.children) || []
+    ).filter(
+      (element) => element.className.includes("season") || element.className.includes("open-season")
+    );
+    const currentSeasonIndex = seasonList.findIndex(
+      (element) => element.className.includes("open-season")
+    );
+    const currentSeasonNode = currentSeasonIndex >= 0 ? seasonList[currentSeasonIndex] : void 0;
+    const seasonDataId = (currentSeasonNode == null ? void 0 : currentSeasonNode.getAttribute("data-tvshow-id")) || "";
+    const isSeasonWatched = currentSeasonNode == null ? void 0 : currentSeasonNode.className.includes("seen");
+    const nextSeasonHref = currentSeasonNode ? ((_b = seasonList[currentSeasonIndex + 1]) == null ? void 0 : _b.getAttribute("href")) || "" : void 0;
     episodesArray.forEach((episode, index2) => {
       const episodeDataNode = episode.querySelector("div.episode");
       if (episodeDataNode) {
-        observer.observe(episodeDataNode, {
-          attributes: true
-        });
         const id = episodeDataNode.getAttribute("data-episode-number") || "";
         const dataId = episodeDataNode.getAttribute("data-episode-id") || "";
         const season = episodeDataNode.getAttribute("data-season-id") || "";
@@ -978,52 +1010,99 @@
           number: id,
           season,
           node: episodeDataNode,
-          seasonDataId: currentSeasonDataId,
+          seasonDataId,
           isSeasonLastEpisode: index2 === episodesArray.length - 1,
-          isWatched
+          isWatched,
+          isSeasonWatched,
+          seasonNode: currentSeasonNode,
+          nextSeasonHref
         };
         if (data.id && (tvShowInfo == null ? void 0 : tvShowInfo.episode) && data.id === tvShowInfo.episode) {
-          setCurrentContentData(data);
+          currentEpisode = data;
         }
+        episodesList.push(data);
       }
     });
+    return {
+      currentEpisode,
+      episodesList
+    };
+  };
+  const _tmpl$ = /* @__PURE__ */ template(`<div><button></button><button>Next Episode</button></div>`);
+  const ShowsPage = ({
+    hasContentPlayer
+  }) => {
+    const [pageDataState, setPageDataState] = createSignal();
+    const tvShowInfo = getGlobalStore().content;
+    const pageData = mapEpisodesData();
+    setPageDataState(pageData);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "class") {
+          const currentShowStatus = getTvShowStatus();
+          if (currentShowStatus && !currentShowStatus.isFollowing) {
+            currentShowStatus.followNode.click();
+          }
+          const newEpisodesData = mapEpisodesData();
+          setPageDataState(newEpisodesData);
+        }
+      });
+    });
+    pageData.episodesList.forEach((episode) => {
+      observer.observe(episode.node, {
+        attributes: true
+      });
+    });
     const handleNextEpisodeClick = () => {
-      var _a2;
       if (!tvShowInfo || !tvShowInfo.season || !tvShowInfo.episode) {
         return;
       }
-      if (!((_a2 = currentContentData()) == null ? void 0 : _a2.isSeasonLastEpisode)) {
+      const currentPageDataState = pageDataState();
+      if (!!(currentPageDataState == null ? void 0 : currentPageDataState.currentEpisode) && !currentPageDataState.currentEpisode.isSeasonLastEpisode) {
         window.location.href = resolveTvShowUrl({
           showId: tvShowInfo.id,
           season: tvShowInfo.season,
           episode: `${parseInt(tvShowInfo.episode) + 1}`
         });
+      } else if (!!(currentPageDataState == null ? void 0 : currentPageDataState.currentEpisode) && currentPageDataState.currentEpisode.isSeasonLastEpisode && currentPageDataState.currentEpisode.nextSeasonHref) {
+        const contentInfo = extractContentInfoFromHref(currentPageDataState.currentEpisode.nextSeasonHref);
+        if (contentInfo) {
+          window.location.href = resolveTvShowUrl({
+            showId: tvShowInfo.id,
+            season: contentInfo.season || "",
+            episode: "1"
+          });
+        }
       }
     };
     const handleToggleWatched = async (data) => {
-      const success = await markEpisodeRead(data.dataId, data.node);
-      if (success) {
-        setCurrentContentData((prevState) => {
-          if (!prevState)
-            return prevState;
-          return {
-            ...prevState,
-            isWatched: !prevState.isWatched
-          };
-        });
-      }
+      const episodeUpdateSuccess = await markEpisodeRead(data.dataId);
+      if (!episodeUpdateSuccess)
+        return;
+      data.node.classList.toggle("seen");
+      const {
+        currentEpisode,
+        episodesList
+      } = mapEpisodesData();
+      if (!currentEpisode)
+        return;
+      const seasonUpdateSuccess = await updateSeasonStatus(currentEpisode, episodesList);
+      if (!seasonUpdateSuccess || !currentEpisode.seasonNode)
+        return;
+      currentEpisode.seasonNode.classList.toggle("seen");
     };
     return hasContentPlayer ? (() => {
       const _el$ = _tmpl$.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling;
       _el$2.$$click = () => {
-        const contentData = currentContentData();
+        var _a2;
+        const contentData = (_a2 = pageDataState()) == null ? void 0 : _a2.currentEpisode;
         if (contentData) {
           handleToggleWatched(contentData);
         }
       };
       insert(_el$2, () => {
-        var _a2;
-        return `${((_a2 = currentContentData()) == null ? void 0 : _a2.isWatched) ? "Unwatch" : "Mark watched"}`;
+        var _a2, _b;
+        return `${((_b = (_a2 = pageDataState()) == null ? void 0 : _a2.currentEpisode) == null ? void 0 : _b.isWatched) ? "Unwatch" : "Mark watched"}`;
       });
       _el$3.$$click = handleNextEpisodeClick;
       createRenderEffect((_p$) => {
