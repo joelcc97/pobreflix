@@ -34,6 +34,13 @@ export const extractContentInfoFromPath = (
   };
 };
 
+export const extractContentInfoFromHref = (
+  href: string
+): Option<ContentPlayingType> => {
+  const path = href.replace(configs.baseUrl, "");
+  return extractContentInfoFromPath("/" + path);
+};
+
 export const getLoggedInUser = (): Option<string> => {
   const userInfo = document.querySelectorAll(
     "div.user div.menu div.username"
