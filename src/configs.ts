@@ -15,7 +15,7 @@ const configs: Readonly<ConfigType> = {
     "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
   tvshowSeasonLinkTemplate:
     "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-  scriptVersion: "0.0.7",
+  scriptVersion: "0.0.8",
 };
 
 export default configs;

@@ -2,11 +2,11 @@ import { getGlobalStore } from "~/stores";
 
 type TvShowData = {
   isFollowing?: boolean;
-  followNode: Element;
+  followNode: HTMLAnchorElement;
   isFavorite?: boolean;
-  favoriteNode: Element;
+  favoriteNode: HTMLAnchorElement;
   isWatchLater?: boolean;
-  watchLaterNode: Element;
+  watchLaterNode: HTMLAnchorElement;
 };
 
 const isActive = (node: Element): boolean => {
@@ -16,7 +16,7 @@ const isActive = (node: Element): boolean => {
 export const getTvShowStatus = (): Option<TvShowData> => {
   const buttonElements = Array.from(
     document.querySelectorAll("div.content-actions > a")
-  );
+  ) as HTMLAnchorElement[];
 
   const followNode = buttonElements.find(
     (element) => element.getAttribute("data-interaction-type") === "f"
