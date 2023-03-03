@@ -1,4 +1,4 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createEffect, createSignal } from "solid-js";
 import styles from "./ShowsPage.module.css";
 import { getGlobalStore } from "~/stores";
 import {
@@ -20,11 +20,43 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
     currentEpisode?: PageData;
     episodesList: PageData[];
   }>();
+
   const tvShowInfo = getGlobalStore().content;
   // const currentShowStatus = getTvShowStatus();
 
   const pageData = mapEpisodesData();
   setPageDataState(pageData);
+
+  const playerFrameNode = document.querySelector(
+    "div#content-player div.player-frame"
+  );
+
+  setTimeout(() => {
+    if (window.innerWidth < 768) {
+      pageDataState()?.currentEpisode?.node?.scrollIntoView({
+        block: "center",
+        inline: "center",
+      });
+    }
+  }, 200);
+
+  const [videoPlayer, setVideoPlayer] =
+    createSignal<Option<HTMLVideoElement>>();
+
+  createEffect(() => {
+    const videoPlayerState = videoPlayer();
+
+    if (videoPlayerState) {
+      videoPlayerState.onpause = () => {
+        if (
+          videoPlayerState.currentTime === videoPlayerState.duration &&
+          document.fullscreenEnabled
+        ) {
+          document.exitFullscreen();
+        }
+      };
+    }
+  });
 
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -35,16 +67,35 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
         const currentShowStatus = getTvShowStatus();
 
         if (currentShowStatus && !currentShowStatus.isFollowing) {
-          (
-            currentShowStatus.followNode as unknown as { click: () => void }
-          ).click();
+          currentShowStatus.followNode.click();
         }
 
         const newEpisodesData = mapEpisodesData();
         setPageDataState(newEpisodesData);
+      } else if (
+        mutation.type === "childList" &&
+        mutation.target === playerFrameNode
+      ) {
+        setTimeout(() => {
+          const videoIframe =
+            (document.querySelector(
+              "div.player-frame iframe"
+            ) as HTMLIFrameElement) || undefined;
+
+          const videoPlayer =
+            (videoIframe?.contentDocument?.querySelector(
+              "div#customVideoPlayer video"
+            ) as HTMLVideoElement) || undefined;
+
+          setVideoPlayer(videoPlayer);
+        }, 500);
       }
     });
   });
+
+  if (playerFrameNode) {
+    observer.observe(playerFrameNode, { childList: true });
+  }
 
   pageData.episodesList.forEach((episode) => {
     observer.observe(episode.node, { attributes: true });

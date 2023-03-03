@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.7
+// @version      0.0.8
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -18,12 +18,15 @@
 // @exclude      https://www3.pobre.wtf/play/*
 // ==/UserScript==
 
-(t=>{const n=document.createElement("style");n.dataset.source="vite-plugin-monkey",n.innerText=t,document.head.appendChild(n)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_grqdj_1{width:100%;max-width:100%;margin-top:40px;margin-bottom:-20px;padding:0 12px;display:flex;justify-content:space-around;column-gap:30px}@media screen and (min-width: 1200px){._Container_grqdj_1{flex:0 0 auto;width:66.66666666%;justify-content:flex-end}}._Button_grqdj_39{padding:10px 15px;outline:0;border-radius:12px;background:rgba(92,139,147,.2);color:#fff;border:0;font-weight:600}._Button_grqdj_39:hover{background:rgba(92,139,147,.4)}");
+(n=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=n,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}@media screen and (max-width: 768px){div.content-episodes{flex-direction:row;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:scroll}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_grqdj_1{width:100%;max-width:100%;margin-top:40px;margin-bottom:-20px;padding:0 12px;display:flex;justify-content:space-around;column-gap:30px}@media screen and (min-width: 1200px){._Container_grqdj_1{flex:0 0 auto;width:66.66666666%;justify-content:flex-end}}._Button_grqdj_39{padding:10px 15px;outline:0;border-radius:12px;background:rgba(92,139,147,.2);color:#fff;border:0;font-weight:600}._Button_grqdj_39:hover{background:rgba(92,139,147,.4)}");
 
 (function() {
   var _a;
   "use strict";
   const sharedConfig = {};
+  function setHydrateContext(context) {
+    sharedConfig.context = context;
+  }
   const equalFn = (a, b) => a === b;
   const $TRACK = Symbol("solid-track");
   const signalOptions = {
@@ -79,6 +82,12 @@
   function createRenderEffect(fn, value, options) {
     const c = createComputation(fn, value, false, STALE);
     updateComputation(c);
+  }
+  function createEffect(fn, value, options) {
+    runEffects = runUserEffects;
+    const c = createComputation(fn, value, false, STALE);
+    c.user = true;
+    Effects ? Effects.push(c) : updateComputation(c);
   }
   function createMemo(fn, value, options) {
     options = options ? Object.assign({}, signalOptions, options) : signalOptions;
@@ -294,6 +303,20 @@
   }
   function runQueue(queue) {
     for (let i = 0; i < queue.length; i++)
+      runTop(queue[i]);
+  }
+  function runUserEffects(queue) {
+    let i, userLength = 0;
+    for (i = 0; i < queue.length; i++) {
+      const e = queue[i];
+      if (!e.user)
+        runTop(e);
+      else
+        queue[userLength++] = e;
+    }
+    if (sharedConfig.context)
+      setHydrateContext();
+    for (i = 0; i < userLength; i++)
       runTop(queue[i]);
   }
   function lookUpstream(node, ignore) {
@@ -745,7 +768,7 @@
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
     tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-    scriptVersion: "0.0.7"
+    scriptVersion: "0.0.8"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
@@ -1036,6 +1059,27 @@
     const tvShowInfo = getGlobalStore().content;
     const pageData = mapEpisodesData();
     setPageDataState(pageData);
+    const playerFrameNode = document.querySelector("div#content-player div.player-frame");
+    setTimeout(() => {
+      var _a2, _b, _c;
+      if (window.innerWidth < 768) {
+        (_c = (_b = (_a2 = pageDataState()) == null ? void 0 : _a2.currentEpisode) == null ? void 0 : _b.node) == null ? void 0 : _c.scrollIntoView({
+          block: "center",
+          inline: "center"
+        });
+      }
+    }, 200);
+    const [videoPlayer, setVideoPlayer] = createSignal();
+    createEffect(() => {
+      const videoPlayerState = videoPlayer();
+      if (videoPlayerState) {
+        videoPlayerState.onpause = () => {
+          if (videoPlayerState.currentTime === videoPlayerState.duration && document.fullscreenEnabled) {
+            document.exitFullscreen();
+          }
+        };
+      }
+    });
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "attributes" && mutation.attributeName === "class") {
@@ -1045,9 +1089,21 @@
           }
           const newEpisodesData = mapEpisodesData();
           setPageDataState(newEpisodesData);
+        } else if (mutation.type === "childList" && mutation.target === playerFrameNode) {
+          setTimeout(() => {
+            var _a2;
+            const videoIframe = document.querySelector("div.player-frame iframe") || void 0;
+            const videoPlayer2 = ((_a2 = videoIframe == null ? void 0 : videoIframe.contentDocument) == null ? void 0 : _a2.querySelector("div#customVideoPlayer video")) || void 0;
+            setVideoPlayer(videoPlayer2);
+          }, 500);
         }
       });
     });
+    if (playerFrameNode) {
+      observer.observe(playerFrameNode, {
+        childList: true
+      });
+    }
     pageData.episodesList.forEach((episode) => {
       observer.observe(episode.node, {
         attributes: true
