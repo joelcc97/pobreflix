@@ -33,10 +33,24 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
 
   setTimeout(() => {
     if (window.innerWidth < 768) {
-      pageDataState()?.currentEpisode?.node?.scrollIntoView({
-        block: "center",
-        inline: "center",
-      });
+      const episodesDiv =
+        (document.querySelector("div.content-episodes") as HTMLDivElement) ||
+        undefined;
+
+      const currentEpisodeNode =
+        (pageDataState()?.currentEpisode?.node as HTMLDivElement) || undefined;
+
+      if (currentEpisodeNode && episodesDiv) {
+        const leftOffset = currentEpisodeNode.offsetLeft;
+        const episodeWidth = currentEpisodeNode.clientWidth;
+        const scrolldivWidth = episodesDiv.clientWidth;
+        const divLeftOffset = episodesDiv.offsetLeft;
+
+        episodesDiv.scrollTo(
+          leftOffset - divLeftOffset - (scrolldivWidth - episodeWidth) / 2,
+          0
+        );
+      }
     }
   }, 200);
 
@@ -48,12 +62,19 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
 
     if (videoPlayerState) {
       videoPlayerState.onended = () => {
-        if (
-          document.fullscreenElement
-        ) {
-          document.exitFullscreen();
+        const fullScreenButton =
+          ((
+            document.querySelector(
+              "div.player-frame iframe"
+            ) as HTMLIFrameElement
+          )?.contentDocument?.querySelector(
+            "button.vjs-fullscreen-control"
+          ) as HTMLButtonElement) || undefined;
+
+        if (document.fullscreenElement && fullScreenButton) {
+          fullScreenButton.click();
         }
-      }
+      };
     }
   });
 
@@ -164,10 +185,11 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
           }
         }}
       >
-        {`${pageDataState()?.currentEpisode?.isWatched
-          ? "Unwatch"
-          : "Mark watched"
-          }`}
+        {`${
+          pageDataState()?.currentEpisode?.isWatched
+            ? "Unwatch"
+            : "Mark watched"
+        }`}
       </button>
       <button class={styles.Button} onClick={handleNextEpisodeClick}>
         Next Episode
@@ -177,3 +199,4 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
 };
 
 export default ShowsPage;
+

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.9
+// @version      0.0.10
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -768,7 +768,7 @@
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
     tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-    scriptVersion: "0.0.9"
+    scriptVersion: "0.0.10"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
@@ -1061,12 +1061,17 @@
     setPageDataState(pageData);
     const playerFrameNode = document.querySelector("div#content-player div.player-frame");
     setTimeout(() => {
-      var _a2, _b, _c;
+      var _a2, _b;
       if (window.innerWidth < 768) {
-        (_c = (_b = (_a2 = pageDataState()) == null ? void 0 : _a2.currentEpisode) == null ? void 0 : _b.node) == null ? void 0 : _c.scrollIntoView({
-          block: "center",
-          inline: "center"
-        });
+        const episodesDiv = document.querySelector("div.content-episodes") || void 0;
+        const currentEpisodeNode = ((_b = (_a2 = pageDataState()) == null ? void 0 : _a2.currentEpisode) == null ? void 0 : _b.node) || void 0;
+        if (currentEpisodeNode && episodesDiv) {
+          const leftOffset = currentEpisodeNode.offsetLeft;
+          const episodeWidth = currentEpisodeNode.clientWidth;
+          const scrolldivWidth = episodesDiv.clientWidth;
+          const divLeftOffset = episodesDiv.offsetLeft;
+          episodesDiv.scrollTo(leftOffset - divLeftOffset - (scrolldivWidth - episodeWidth) / 2, 0);
+        }
       }
     }, 200);
     const [videoPlayer, setVideoPlayer] = createSignal();
@@ -1074,8 +1079,10 @@
       const videoPlayerState = videoPlayer();
       if (videoPlayerState) {
         videoPlayerState.onended = () => {
-          if (document.fullscreenElement) {
-            document.exitFullscreen();
+          var _a2, _b;
+          const fullScreenButton = ((_b = (_a2 = document.querySelector("div.player-frame iframe")) == null ? void 0 : _a2.contentDocument) == null ? void 0 : _b.querySelector("button.vjs-fullscreen-control")) || void 0;
+          if (document.fullscreenElement && fullScreenButton) {
+            fullScreenButton.click();
           }
         };
       }
