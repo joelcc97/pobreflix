@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pobreflix
 // @namespace    pobretv-enhanced
-// @version      0.0.8
+// @version      0.0.9
 // @author       monkey
 // @description  Pobretv enhanced
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pobre.wtf
@@ -768,7 +768,7 @@
     excludedPages: ["play"],
     tvshowCompleteLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}/episode/${episode}#content-player",
     tvshowSeasonLinkTemplate: "https://www3.pobre.wtf/tvshows/${showId}/season/${season}",
-    scriptVersion: "0.0.8"
+    scriptVersion: "0.0.9"
   };
   var TypeOfContentEnum = /* @__PURE__ */ ((TypeOfContentEnum2) => {
     TypeOfContentEnum2["MOVIES"] = "movies";
