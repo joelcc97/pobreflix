@@ -47,14 +47,13 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
     const videoPlayerState = videoPlayer();
 
     if (videoPlayerState) {
-      videoPlayerState.onpause = () => {
+      videoPlayerState.onended = () => {
         if (
-          videoPlayerState.currentTime === videoPlayerState.duration &&
-          document.fullscreenEnabled
+          document.fullscreenElement
         ) {
           document.exitFullscreen();
         }
-      };
+      }
     }
   });
 
@@ -166,8 +165,8 @@ const ShowsPage: Component<{ hasContentPlayer: boolean }> = ({
         }}
       >
         {`${pageDataState()?.currentEpisode?.isWatched
-            ? "Unwatch"
-            : "Mark watched"
+          ? "Unwatch"
+          : "Mark watched"
           }`}
       </button>
       <button class={styles.Button} onClick={handleNextEpisodeClick}>

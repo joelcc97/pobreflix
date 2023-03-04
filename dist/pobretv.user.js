@@ -18,7 +18,7 @@
 // @exclude      https://www3.pobre.wtf/play/*
 // ==/UserScript==
 
-(n=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=n,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}@media screen and (max-width: 768px){div.content-episodes{flex-direction:row;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:scroll}}._List_14sjd_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_14sjd_1{-ms-overflow-style:none;scrollbar-width:none}._List_14sjd_1::-webkit-scrollbar{display:none}}._Scroll_14sjd_45{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_14sjd_59{color:#fff;margin-bottom:20px}._Snap_14sjd_69{scroll-snap-align:start;scroll-snap-stop:always}._Container_grqdj_1{width:100%;max-width:100%;margin-top:40px;margin-bottom:-20px;padding:0 12px;display:flex;justify-content:space-around;column-gap:30px}@media screen and (min-width: 1200px){._Container_grqdj_1{flex:0 0 auto;width:66.66666666%;justify-content:flex-end}}._Button_grqdj_39{padding:10px 15px;outline:0;border-radius:12px;background:rgba(92,139,147,.2);color:#fff;border:0;font-weight:600}._Button_grqdj_39:hover{background:rgba(92,139,147,.4)}");
+(n=>{const t=document.createElement("style");t.dataset.source="vite-plugin-monkey",t.innerText=n,document.head.appendChild(t)})("section#enhanced_pobretv{display:flex;margin:0;padding:0;flex:1;width:100%}section#enhanced_pobretv>p,h1,h2,h3,h4,h5,h6{margin:0;padding:0}@media screen and (max-width: 768px){.slider-nav{display:none!important}}@media screen and (max-width: 768px){div.content-episodes{flex-direction:row;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:scroll}}._List_1fdrj_1{display:flex;flex-direction:row!important;column-gap:10px;justify-content:start;margin-bottom:30px!important;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory}@media screen and (max-width: 768px){._List_1fdrj_1{-ms-overflow-style:none;scrollbar-width:none}._List_1fdrj_1::-webkit-scrollbar{display:none}}._Scroll_1fdrj_23{display:flex;flex-direction:column!important;max-width:100%;padding:0 48px}._Title_1fdrj_30{color:#fff;margin-bottom:20px}._Snap_1fdrj_35{scroll-snap-align:start;scroll-snap-stop:always}._Container_1ttvj_1{width:100%;max-width:100%;margin-top:40px;margin-bottom:-20px;padding:0 12px;display:flex;justify-content:space-around;column-gap:30px}@media screen and (min-width: 1200px){._Container_1ttvj_1{flex:0 0 auto;width:66.66666666%;justify-content:flex-end}}._Button_1ttvj_20{padding:10px 15px;outline:0;border-radius:12px;background:rgba(92,139,147,.2);color:#fff;border:0;font-weight:600}._Button_1ttvj_20:hover{background:rgba(92,139,147,.4)}");
 
 (function() {
   var _a;
@@ -897,10 +897,10 @@
     return globalStore;
   }
   const index = "";
-  const List = "_List_14sjd_1";
-  const Scroll = "_Scroll_14sjd_45";
-  const Title = "_Title_14sjd_59";
-  const Snap = "_Snap_14sjd_69";
+  const List = "_List_1fdrj_1";
+  const Scroll = "_Scroll_1fdrj_23";
+  const Title = "_Title_1fdrj_30";
+  const Snap = "_Snap_1fdrj_35";
   const styles$1 = {
     List,
     Scroll,
@@ -966,8 +966,8 @@
     })();
   };
   delegateEvents(["click"]);
-  const Container = "_Container_grqdj_1";
-  const Button = "_Button_grqdj_39";
+  const Container = "_Container_1ttvj_1";
+  const Button = "_Button_1ttvj_20";
   const styles = {
     Container,
     Button
@@ -1073,8 +1073,8 @@
     createEffect(() => {
       const videoPlayerState = videoPlayer();
       if (videoPlayerState) {
-        videoPlayerState.onpause = () => {
-          if (videoPlayerState.currentTime === videoPlayerState.duration && document.fullscreenEnabled) {
+        videoPlayerState.onended = () => {
+          if (document.fullscreenElement) {
             document.exitFullscreen();
           }
         };
